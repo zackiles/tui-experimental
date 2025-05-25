@@ -1,0 +1,11 @@
+---
+description: Deno Task Test in @deno.json
+globs:
+alwaysApply: false
+---
+- <**DANGER**>: NEVER RUN 'deno test ...`!!!! Use `deno task test ...` instead!!!
+- ALWAYS use `deno task test` or `deno task test --filter ...`
+- `deno task test` is a Deno task that uses the test-runner file in `scripts/tests.ts`
+- The test-runner sets up special environment variables and config
+- ALL tests must be boostrapped by the `scripts/tests.ts` folder which can he used by running the Deno task defined in `deno.json` and running the task `deno task test ...`
+- Example --filter `deno task test --filter "Agent Streaming"`

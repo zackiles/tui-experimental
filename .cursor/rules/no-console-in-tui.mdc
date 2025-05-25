@@ -1,0 +1,101 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Terminal Emulator Debugging Rule
+
+## ⚠️ CRITICAL: Never Use `console.log` for Debugging
+
+**This is a terminal emulator project that hijacks the terminal.** `console.log`, `console.debug`, `console.warn`, and `console.error` output **WILL NOT BE VISIBLE** because:
+
+1. The terminal is in **raw mode** (`Deno.stdin.setRaw(true)`)
+2. The terminal is in **alternate screen buffer** (`\x1b[?1049h`)
+3. The application controls all terminal output
+
+## ✅ Correct Debugging Approach
+
+**ALWAYS** use the diagnostic logger for debugging:
+
+```ts
+import { diagnosticLogger } from './utils/diagnostic-logger.ts'
+
+// ✅ CORRECT - writes to log files
+diagnosticLogger.debug('Component', 'Debug message', { data })
+diagnosticLogger.info('Component', 'Info message')
+diagnosticLogger.warn('Component', 'Warning message')
+diagnosticLogger.error('Component', 'Error message', error)
+
+// ❌ WRONG - invisible in this project
+console.log('Debug message')
+console.debug('Debug message') 
+console.warn('Warning')
+console.error('Error')
+```
+
+## Log File Locations
+
+The diagnostic logger ([src/utils/diagnostic-logger.ts](mdc:src/utils/diagnostic-logger.ts)) writes to daily rotating files in the `logs/` directory:
+- Success logs: `logs/tui-debug-{YYYY-MM-DD}-out.log` (DEBUG, INFO)
+- Error logs: `logs/tui-debug-{YYYY-MM-DD}-err.log` (WARN, ERROR)
+- All logs: `logs/tui-debug-{YYYY-MM-DD}-all.log` (Everything)
+- View logs: `tail -f logs/tui-debug-*-all.log` or `tail -f logs/tui-debug-*-err.log`
+
+## Viewing Logs
+
+```bash
+# Watch all activity (everything)
+tail -f logs/tui-debug-*-all.log
+
+# Watch only errors and warnings
+tail -f logs/tui-debug-*-err.log
+
+# Watch only debug/info messages
+tail -f logs/tui-debug-*-out.log
+
+# View today's logs
+cat logs/tui-debug-$(date +%Y-%m-%d)-all.log
+```
+
+## When You Need Console Output
+
+The **only** acceptable use of `console.*` is in:
+1. **Non-TUI test scripts** (like [test-output.ts](mdc:test-output.ts))
+2. **Build scripts** that don't use the TUI runtime
+3. **Error handling during startup** before TUI mode is entered
+
+## Examples
+
+```ts
+// ✅ Debugging component rendering (goes to -out.log and -all.log)
+diagnosticLogger.debug('Renderer', 'Rendering node', { 
+  type: node.type, 
+  props: node.props 
+})
+
+// ✅ Error in runtime (goes to -err.log and -all.log)
+diagnosticLogger.error('TUIRuntime', 'Failed to initialize', error)
+
+// ✅ Performance monitoring (goes to -out.log and -all.log)
+diagnosticLogger.info('Performance', `Render took ${renderTime}ms`)
+
+// ✅ Warning (goes to -err.log and -all.log)
+diagnosticLogger.warn('Input', 'Unexpected key sequence')
+
+// ❌ These will be invisible in TUI mode
+console.log('Component rendered')
+console.error('Something failed')
+```
+
+## Enforcement
+
+This project **automatically detects and prevents** console usage:
+- All console methods are hijacked in [main.ts](mdc:src/main.ts) via [no-console.ts](mdc:src/utils/no-console.ts)
+- Any console usage will **immediately crash the app** with a clear error message
+- Error messages specify the exact import path: `src/utils/diagnostic-logger.ts`
+- Error messages specify the exact log directory: `logs/`
+- This happens before any imports, catching console usage anywhere in the codebase
+
+## Summary
+
+**Remember: This project controls the terminal completely. Use `diagnosticLogger` for all debugging output.**

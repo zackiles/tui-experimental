@@ -1,0 +1,11 @@
+---
+description: 
+globs: vendor/notcurses/**/**,src/graphics/notcurses-ffi.ts,src/graphics/plane-manager.ts,src/graphics/visual-renderer.ts,src/graphics/effects-system.ts,src/graphics/blitter-engine.ts
+alwaysApply: false
+---
+# Notcurses Deno FFI
+- Read the notcurses FFI API documentation in the file [notcurses-deno.md](mdc:docs/notcurses-deno.md) 
+- Notcurses library is vendored in `vendor/notcurses`
+  - Documentation on installing and managing the notcurses vendored libraries is in `vendor/notcurses/README.md`
+  - A setup script for vendoring notcurses is in `vendor/notcurses/setup.ts`
+- Read the Deno FFI documentation found in the file [deno-ffi.md](mdc:docs/deno-ffi.md) to understand how how the Deno API works
