@@ -2,6 +2,7 @@
 // This bypasses the full framework to isolate terminal output issues
 
 import { ANSI_CODES } from '../src/core/constants.ts'
+import { diagnosticLogger } from '../src/utils/diagnostic-logger.ts'
 
 async function writeToTerminal(data: string): Promise<void> {
   const encoder = new TextEncoder()
@@ -9,8 +10,8 @@ async function writeToTerminal(data: string): Promise<void> {
 }
 
 async function simpleTerminalTest() {
-  console.log('🧪 Testing basic terminal ANSI sequences...')
-  console.log('Press any key to start the test, or Ctrl+C to exit')
+  diagnosticLogger.info('TerminalTest', '🧪 Testing basic terminal ANSI sequences...')
+  diagnosticLogger.info('TerminalTest', 'Press any key to start the test, or Ctrl+C to exit')
   
   // Wait for user input
   const buffer = new Uint8Array(1)
@@ -42,13 +43,13 @@ async function simpleTerminalTest() {
     await writeToTerminal(ANSI_CODES.CURSOR_SHOW)
     await writeToTerminal(ANSI_CODES.ALTERNATE_SCREEN_EXIT)
     
-    console.log('✅ Terminal test completed successfully!')
+    diagnosticLogger.info('TerminalTest', '✅ Terminal test completed successfully!')
     
   } catch (error) {
     // Ensure we restore terminal state even on error
     await writeToTerminal(ANSI_CODES.CURSOR_SHOW)
     await writeToTerminal(ANSI_CODES.ALTERNATE_SCREEN_EXIT)
-    console.error('❌ Terminal test failed:', error)
+    diagnosticLogger.error('TerminalTest', '❌ Terminal test failed:', error)
     Deno.exit(1)
   }
 }

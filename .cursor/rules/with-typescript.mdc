@@ -1,10 +1,10 @@
 ---
-description:
-globs: *.ts
+description: 
+globs: *.ts,*.tsx,*.md
 alwaysApply: false
 ---
 # Rules For Typescript Types
-Follow these rules and standards when creating or editing types:
+Follow these rules and standards when creating or editing types in code or documentation:
 
 - The less code it takes to define a type the better
 - Derive dynamic types from values instead of repeating values that already exist

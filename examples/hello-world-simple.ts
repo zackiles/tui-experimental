@@ -2,6 +2,7 @@
 
 import { runApp, TUIRuntime } from '../src/main.ts'
 import type { TerminalNode, Component } from '../src/main.ts'
+import { diagnosticLogger } from '../src/utils/diagnostic-logger.ts'
 
 const HelloWorld: Component = () => {
   return {
@@ -53,11 +54,11 @@ const HelloWorld: Component = () => {
 }
 
 if (import.meta.main) {
-  console.log('Starting TUI Framework Demo...')
+  diagnosticLogger.info('HelloWorld', 'Starting TUI Framework Demo...')
   try {
     await runApp(HelloWorld, {})
   } catch (error) {
-    console.error('Error running TUI app:', error)
+    diagnosticLogger.error('HelloWorld', 'Error running TUI app:', error)
     Deno.exit(1)
   }
 } 

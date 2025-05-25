@@ -3,6 +3,9 @@
 // CRITICAL: Prevent invisible console output in TUI mode
 import './utils/no-console.ts'
 
+// Initialize terminal cleanup system
+import './utils/terminal-cleanup.ts'
+
 // Core exports
 export { runApp, TUIRuntime } from './core/runtime.ts'
 export type {
@@ -56,6 +59,13 @@ export {
   INPUT_TYPES,
   VERSION,
 } from './core/constants.ts'
+
+// Terminal cleanup utilities
+export {
+  cleanupTerminal,
+  emergencyCleanupTerminal,
+  terminalCleanup,
+} from './utils/terminal-cleanup.ts'
 
 // Version info
 export const version = '0.1.0'

@@ -3,236 +3,250 @@
 import { parseArgs } from '@std/cli/parse-args'
 import { join } from '@std/path'
 import { exists } from '@std/fs'
+import { dedent } from '@qnighy/dedent'
 
-interface ExampleFile {
+type ExampleFile = {
   name: string
   path: string
-  description?: string
 }
 
-async function getExamples(): Promise<ExampleFile[]> {
-  const examplesDir = 'examples'
-  const examples: ExampleFile[] = []
-  
+const getExamples = async (): Promise<ExampleFile[]> => {
   try {
-    for await (const entry of Deno.readDir(examplesDir)) {
+    const entries = []
+    for await (const entry of Deno.readDir('examples')) {
       if (entry.isFile && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
-        examples.push({
+        entries.push({
           name: entry.name,
-          path: join(examplesDir, entry.name)
+          path: join('examples', entry.name)
         })
       }
     }
+    return entries.sort((a, b) => a.name.localeCompare(b.name))
   } catch (error) {
     console.error('❌ Failed to read examples directory:', String(error))
     Deno.exit(1)
   }
-  
-  return examples.sort((a, b) => a.name.localeCompare(b.name))
 }
 
-function listExamples(examples: ExampleFile[]) {
+const displayExamples = (examples: ExampleFile[], showUsage = true) => {
   console.log('📋 Available examples:\n')
+  examples.forEach((ex, i) => console.log(`  ${i + 1}. ${ex.name}`))
   
-  examples.forEach((example, index) => {
-    console.log(`  ${index + 1}. ${example.name}`)
-  })
-  
-  console.log('\n💡 Usage:')
-  console.log('  deno task example <name>           # Run specific example')
-  console.log('  deno task example list             # Show this list')
-  console.log('  deno task example                  # Interactive mode')
-  console.log('\n📝 Examples:')
-  console.log('  deno task example hello-world')
-  console.log('  deno task example hello-world.tsx')
-  console.log('  deno task example 1                # Run first example')
-  console.log('\n🖥️  TUI Examples:')
-  console.log('  • .tsx files are TUI applications requiring a real terminal')
-  console.log('  • If they fail, run directly: deno run -A examples/[file]')
-  console.log('  • Cannot run with pipes, redirects, or in CI environments')
-}
+  if (showUsage) {
+    console.log(dedent`
+      💡 Usage:
+        deno task example <name>           # Run specific example
+        deno task example list             # Show this list
+        deno task example                  # Interactive mode
+        deno task example --help           # Show help information
 
-async function runExample(examples: ExampleFile[], nameOrIndex: string, timeoutSecs = 10) {
-  let targetExample: ExampleFile | undefined
-  
-  // Try to find by exact name match first
-  targetExample = examples.find(ex => ex.name === nameOrIndex)
-  
-  // Try to find by name without extension
-  if (!targetExample) {
-    targetExample = examples.find(ex => 
-      ex.name === `${nameOrIndex}.ts` || ex.name === `${nameOrIndex}.tsx`
-    )
-  }
-  
-  // Try to find by index
-  if (!targetExample && /^\d+$/.test(nameOrIndex)) {
-    const index = parseInt(nameOrIndex) - 1
-    if (index >= 0 && index < examples.length) {
-      targetExample = examples[index]
-    }
-  }
-  
-  if (!targetExample) {
-    console.error(`❌ Example '${nameOrIndex}' not found.`)
-    console.log('\n📋 Available examples:')
-    examples.forEach((ex, i) => console.log(`  ${i + 1}. ${ex.name}`))
-    Deno.exit(1)
-  }
-  
-  // Verify file exists
-  if (!await exists(targetExample.path)) {
-    console.error(`❌ Example file not found: ${targetExample.path}`)
-    Deno.exit(1)
-  }
-  
-  console.log(`🚀 Running example: ${targetExample.name}`)
-  console.log(`📂 Path: ${targetExample.path}`)
-  console.log(`🔧 Command: deno run -A ${targetExample.path}`)
-  
-  // Check if this is a TUI example
-  const isTUIExample = targetExample.path.endsWith('.tsx') || 
-                       targetExample.name.includes('hello-world') ||
-                       targetExample.name.includes('phase2')
-  
-  if (isTUIExample) {
-    console.log(`🖥️  TUI Example Detected`)
-    console.log(`⚠️  Note: TUI examples may not work properly through the runner`)
-    console.log(`💡 Recommended: run directly with: deno run -A ${targetExample.path}`)
-    
-    // Ask user if they want to run directly
-    const runDirect = prompt('🤔 Run directly instead? (y/n): ')
-    if (runDirect?.toLowerCase() === 'y' || runDirect?.toLowerCase() === 'yes') {
-      console.log('\n📋 Copy and run this command in your terminal:')
-      console.log(`\x1b[1;36mdeno run -A ${targetExample.path}\x1b[0m`)
-      console.log('\n👋 Exiting example runner...')
-      return
-    }
-    console.log('⚠️  Proceeding with runner (may fail)...')
-  }
-  
-  console.log(`⏱️  Timeout: ${timeoutSecs} seconds\n`)
-  
-  // Run the example with timeout
-  const command = new Deno.Command('deno', {
-    args: ['run', '-A', targetExample.path],
-    stdin: 'inherit',
-    stdout: 'inherit',
-    stderr: 'inherit'
-  })
-  
-  const timeoutMs = timeoutSecs * 1000
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => reject(new Error(`Example timed out after ${timeoutSecs} seconds`)), timeoutMs)
-  })
-  
-  try {
-    const { code } = await Promise.race([
-      command.output(),
-      timeoutPromise
-    ])
-    
-    if (code !== 0) {
-      console.error(`❌ Example failed with exit code: ${code}`)
-      
-      // Check if this might be a TUI-specific issue
-      if (targetExample.path.includes('.tsx') || targetExample.name.includes('hello-world')) {
-        console.error('💡 TUI examples need to run in a real terminal:')
-        console.error('   • Open a terminal window and run the command directly')
-        console.error('   • Ensure you\'re not using pipes, redirects, or CI environments')
-        console.error('   • Try: deno run -A ' + targetExample.path)
-      }
-      
-      Deno.exit(code)
-    }
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('timed out')) {
-      // Try to kill the process first
-      try {
-        // Note: Deno.Command doesn't have kill method, process should timeout naturally
-        // command.kill() // Not available in Deno.Command API
-      } catch {
-        // Ignore kill errors
-      }
-      
-      // Wait a moment for terminal to settle
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // Restore terminal state manually in case it's stuck in alternate screen
-      const encoder = new TextEncoder()
-      await Deno.stdout.write(encoder.encode('\x1b[?1049l')) // Exit alternate screen
-      await Deno.stdout.write(encoder.encode('\x1b[?25h'))   // Show cursor
-      await Deno.stdout.write(encoder.encode('\x1b[c'))      // Reset terminal
-      
-      // Now display the timeout messages
-      console.error(`\n⏰ Example timed out after ${timeoutSecs} seconds`)
-      console.error('💡 Tip: The example might be waiting for input or stuck in a loop')
-      console.error('🔧 Try running it directly: deno run -A ' + targetExample.path)
-      console.error('🖥️  Note: TUI examples need a real terminal (not through pipes/redirects)')
-      console.error(`⚙️  Use --timeout <seconds> to adjust timeout (current: ${timeoutSecs}s)`)
-      
-      Deno.exit(1)
-    } else {
-      throw error
-    }
+      📝 Examples:
+        deno task example hello-world
+        deno task example hello-world.tsx
+        deno task example 1                # Run first example
+
+      🖥️  TUI Examples:
+        • .tsx files are TUI applications requiring a real terminal
+        • If they fail, run directly: deno run -A examples/[file]
+        • Cannot run with pipes, redirects, or CI environments
+    `)
   }
 }
 
-async function interactiveMode(examples: ExampleFile[], timeoutSecs = 10) {
-  listExamples(examples)
-  
-  console.log('\n🔢 Enter example number or name:')
-  const input = prompt('> ')
-  
-  if (!input || input.trim() === '') {
-    console.log('👋 Cancelled.')
-    return
-  }
-  
-  await runExample(examples, input.trim(), timeoutSecs)
+const findExample = (examples: ExampleFile[], nameOrIndex: string): ExampleFile | undefined => {
+  // Try exact name, name without extension, then index
+  return examples.find(ex => ex.name === nameOrIndex) ||
+         examples.find(ex => ex.name === `${nameOrIndex}.ts` || ex.name === `${nameOrIndex}.tsx`) ||
+         (/^\d+$/.test(nameOrIndex) ? examples[parseInt(nameOrIndex) - 1] : undefined)
 }
+
+const isTUIExample = (path: string): boolean => 
+  path.endsWith('.tsx') || path.includes('hello-world') || path.includes('phase2')
 
 async function main() {
-  const args = parseArgs(Deno.args, {
+  const { help, timeout, _ } = parseArgs(Deno.args, {
     boolean: ['help'],
     string: ['timeout'],
     alias: { h: 'help', t: 'timeout' },
     default: { timeout: '10' }
   })
   
-  if (args.help) {
-    console.log('🎯 TUI Example Runner\n')
-    console.log('Usage: deno task example [command|name] [options]\n')
-    console.log('Commands:')
-    console.log('  list                Show all available examples')
-    console.log('  <name>              Run specific example by name')
-    console.log('  <number>            Run example by number\n')
-    console.log('Options:')
-    console.log('  -h, --help          Show this help message')
-    console.log('  -t, --timeout <sec> Set timeout in seconds (default: 10)')
-    return
-  }
-  
   const examples = await getExamples()
-  
   if (examples.length === 0) {
     console.log('❌ No examples found in the examples directory.')
     return
   }
+
+  if (help) {
+    // Combined displayHelp into main since it was only called here
+    console.log(dedent`
+      🎯 TUI Example Runner
+
+      Usage: deno task example [command|name] [options]
+
+      Commands:
+        list                Show all available examples
+        <name>              Run specific example by name
+        <number>            Run example by number
+
+      Options:
+        -h, --help          Show this help message
+        -t, --timeout <sec> Set timeout in seconds (default: 10)
+    `)
+    displayExamples(examples, false)
+    return
+  }
+
+  let exampleName = _[0]?.toString()
+  const timeoutSecs = parseInt(timeout as string) || 15
+
+  if (!exampleName) {
+    // Combined interactiveMode into main since it was only called here
+    displayExamples(examples)
+    const input = prompt('\n🔢 Enter example number or name:\n> ')
+    if (!input?.trim()) {
+      console.log('👋 Cancelled.')
+      return
+    }
+    exampleName = input.trim()
+  } else if (exampleName === 'list') {
+    displayExamples(examples)
+    return
+  }
+
+  // Combined runExample into main since it was only called from here
+  const example = findExample(examples, exampleName)
   
-  const command = args._[0]?.toString()
-  const timeoutSecs = parseInt(args.timeout) || 10
+  if (!example) {
+    console.error(`❌ Example '${exampleName}' not found.`)
+    console.log('\n📋 Available examples:')
+    examples.forEach((ex, i) => console.log(`  ${i + 1}. ${ex.name}`))
+    Deno.exit(1)
+  }
   
-  if (!command) {
-    // Interactive mode
-    await interactiveMode(examples, timeoutSecs)
-  } else if (command === 'list') {
-    listExamples(examples)
-  } else {
-    await runExample(examples, command, timeoutSecs)
+  if (!await exists(example.path)) {
+    console.error(`❌ Example file not found: ${example.path}`)
+    Deno.exit(1)
+  }
+  
+  console.log(`🚀 Running example: ${example.name}`)
+  console.log(`📂 Path: ${example.path}`)
+  console.log(`🔧 Command: deno run -A ${example.path}`)
+  
+  if (isTUIExample(example.path)) {
+    console.log(`🖥️  TUI Example Detected`)
+    console.log(`⚠️  Note: TUI examples may not work properly through the runner`)
+    console.log(`💡 Recommended: run directly with: deno run -A ${example.path}`)
+    
+    const runDirect = prompt('🤔 Run directly instead? (y/n): ')
+    if (runDirect?.toLowerCase().startsWith('y')) {
+      console.log(`\n📋 Copy and run this command in your terminal:`)
+      console.log(`\x1b[1;36mdeno run -A ${example.path}\x1b[0m`)
+      console.log('\n👋 Exiting example runner...')
+      return
+    }
+    console.log('⚠️  Proceeding with runner (may fail)...')
+  }
+  
+  console.clear()
+  console.log(`⏱️  NOTE: example will automatically exit in: ${timeoutSecs} seconds...\n`)
+  await new Promise(resolve => setTimeout(resolve, 3000))
+  console.clear()
+  
+  const command = new Deno.Command('deno', {
+    args: ['run', '-A', example.path],
+    stdin: 'inherit',
+    stdout: 'inherit',
+    stderr: 'inherit'
+  })
+  
+  const child = command.spawn()
+  const timeoutMs = timeoutSecs * 1000
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error(`Example timed out after ${timeoutSecs} seconds`)), timeoutMs)
+  })
+  
+  try {
+    const { code } = await Promise.race([child.status, timeoutPromise])
+    if (code !== 0) {
+      console.error(`❌ Example failed with exit code: ${code}`)
+      
+      if (isTUIExample(example.path)) {
+        console.error(dedent`
+          💡 TUI examples need to run in a real terminal:
+             • Open a terminal window and run the command directly
+             • Ensure you're not using pipes, redirects, or CI environments
+             • Try: deno run -A ${example.path}
+        `)
+      }
+      
+      Deno.exit(code)
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('timed out')) {
+      try {
+        child.kill('SIGTERM')
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        try { child.kill('SIGKILL') } catch {}
+      } catch {}
+      
+      // Comprehensive terminal restoration
+      const encoder = new TextEncoder()
+      // Complete terminal reset sequence
+      const resetSequence = [
+        '\x1b[!p',        // Soft terminal reset
+        '\x1b[?25h',      // Show cursor
+        '\x1b[?1000l',    // Disable mouse tracking
+        '\x1b[?1006l',    // Disable SGR mouse mode
+        '\x1b[?2004l',    // Disable bracketed paste
+        '\x1b[?1004l',    // Disable focus tracking
+        '\x1b[?1049l',    // Exit alternate screen
+        '\x1b[0m',        // Reset all text attributes
+        '\x1b[2J',        // Clear entire screen
+        '\x1b[H',         // Move cursor to home position
+      ].join('')
+      
+      // Write synchronously for immediate effect
+      Deno.stdout.writeSync(encoder.encode(resetSequence))
+      
+      // Disable raw mode if it was enabled
+      try {
+        if (Deno.stdin.isTerminal()) {
+          Deno.stdin.setRaw(false)
+        }
+      } catch {
+        // Ignore errors
+      }
+      
+      console.warn(dedent`
+        ⏰ Example timed out after ${timeoutSecs} seconds
+        💡 Tip: The example might be waiting for input or stuck in a loop
+        🔧 Try running it directly: deno run -A ${example.path}
+        🖥️  Note: TUI examples need a real terminal (not through pipes/redirects)
+        ⚙️  Use --timeout <seconds> to adjust timeout (current: ${timeoutSecs}s)
+      `)
+    } else {
+      throw error
+    }
   }
 }
 
 if (import.meta.main) {
-  await main()
+  await main().catch(console.error)
+  
+  // Final terminal cleanup
+  const encoder = new TextEncoder()
+  const finalReset = '\x1b[!p\x1b[?25h\x1b[?1049l\x1b[0m\x1b[2J\x1b[H'
+  Deno.stdout.writeSync(encoder.encode(finalReset))
+  
+  // Ensure raw mode is disabled
+  try {
+    if (Deno.stdin.isTerminal()) {
+      Deno.stdin.setRaw(false)
+    }
+  } catch {
+    // Ignore errors
+  }
+  
+  console.log('👋 Exiting example runner...')
 } 

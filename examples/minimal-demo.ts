@@ -2,6 +2,7 @@
 
 import { TUIRuntime } from '../src/core/runtime.ts'
 import type { TerminalNode } from '../src/core/types.ts'
+import { diagnosticLogger } from '../src/utils/diagnostic-logger.ts'
 
 const simpleComponent = (): TerminalNode => ({
   type: 'text',
@@ -12,19 +13,19 @@ const simpleComponent = (): TerminalNode => ({
 })
 
 async function main() {
-  console.log('Starting minimal TUI demo...')
+  diagnosticLogger.info('MinimalDemo', 'Starting minimal TUI demo...')
   
   const runtime = new TUIRuntime()
   
   try {
-    console.log('Initializing runtime...')
+    diagnosticLogger.info('MinimalDemo', 'Initializing runtime...')
     await runtime.initialize()
     
-    console.log('Runtime initialized successfully!')
+    diagnosticLogger.info('MinimalDemo', 'Runtime initialized successfully!')
     
     // Run for 2 seconds then exit
     setTimeout(async () => {
-      console.log('Shutting down...')
+      diagnosticLogger.info('MinimalDemo', 'Shutting down...')
       await runtime.shutdown()
       Deno.exit(0)
     }, 2000)
@@ -32,7 +33,7 @@ async function main() {
     await runtime.run(simpleComponent, {})
     
   } catch (error) {
-    console.error('Demo failed:', error)
+    diagnosticLogger.error('MinimalDemo', 'Demo failed:', error)
     await runtime.shutdown()
     Deno.exit(1)
   }

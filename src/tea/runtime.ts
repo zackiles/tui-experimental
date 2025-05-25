@@ -1,6 +1,7 @@
 // The Elm Architecture (TEA) runtime implementation
 import { type JSX } from '@tui/jsx/jsx-runtime'
 import { diagnosticLogger } from '../utils/diagnostic-logger.ts'
+import { terminalCleanup } from '../utils/terminal-cleanup.ts'
 
 export interface Command<Message> {
   execute(): Promise<Message | null>
@@ -62,6 +63,11 @@ export class TEARuntime<Model, Message> {
       renderRequested: false,
       lastRenderTime: 0,
     }
+
+    // Register cleanup handler
+    terminalCleanup.addCleanupHandler(async () => {
+      this.stop()
+    })
 
     // Process initial commands
     this.processCommands(initialCommands)

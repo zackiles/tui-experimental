@@ -1,0 +1,307 @@
+---
+description: 
+globs: *.ts,*.tsx,*.js,*.jsx
+alwaysApply: false
+---
+# Composition of Concerns
+
+## Core Principle
+Group and compose closely related responsibilities together intentionally, especially when separation would introduce unnecessary indirection or performance overhead.
+
+## Why This Matters for TUI
+Terminal UI applications require tight coordination between:
+- Input handling
+- State management  
+- Screen rendering
+- Event processing
+
+Artificially separating these concerns can lead to:
+- Unnecessary context switching
+- Performance degradation
+- Complex state synchronization
+- Harder debugging
+
+## ✅ DO: Compose Related Concerns
+
+### Example: Input Handler with State
+```ts
+// ✅ GOOD: Input and state tightly coupled
+class InputManager {
+  private keyBuffer: string[] = []
+  private lastKey: string | null = null
+  
+  handleInput(key: string) {
+    this.lastKey = key
+    this.keyBuffer.push(key)
+    this.processBuffer() // Direct processing
+  }
+  
+  private processBuffer() {
+    // Direct access to state
+    if (this.keyBuffer.length > 10) {
+      this.keyBuffer.shift()
+    }
+  }
+}
+```
+
+### Example: Render Component with Layout
+```ts
+// ✅ GOOD: Rendering and layout logic composed
+class BoxComponent {
+  private size = { width: 0, height: 0 }
+  private content: string = ''
+  
+  layout(width: number, height: number) {
+    this.size = { width, height }
+    this.render() // Direct re-render on layout
+  }
+  
+  private render() {
+    // Direct access to layout state
+    const { width, height } = this.size
+    // Render implementation...
+  }
+}
+```
+
+## ❌ DON'T: Over-Separate Concerns
+
+### Example: Unnecessarily Split Input
+```ts
+// ❌ BAD: Over-separated with unnecessary indirection
+class KeyboardState {
+  private keys: string[] = []
+  getKeys() { return this.keys }
+  setKeys(keys: string[]) { this.keys = keys }
+}
+
+class KeyboardProcessor {
+  constructor(private state: KeyboardState) {}
+  
+  processKey(key: string) {
+    const keys = this.state.getKeys() // Indirect access
+    keys.push(key)
+    this.state.setKeys(keys) // Unnecessary setter
+  }
+}
+```
+
+### Example: Over-Abstracted Rendering
+```ts
+// ❌ BAD: Rendering split across too many abstractions
+class Size { 
+  constructor(public width: number, public height: number) {}
+}
+
+class Layout {
+  constructor(private size: Size) {}
+  getSize() { return this.size }
+}
+
+class Renderer {
+  constructor(private layout: Layout) {}
+  
+  render() {
+    const size = this.layout.getSize() // Unnecessary getter
+    // Complex prop drilling and state sync
+  }
+}
+```
+
+## When to Compose Concerns
+
+Compose concerns when they exhibit:
+
+1. **Temporal Coupling**: Components that need to change together
+   - Input handling affecting immediate visual feedback
+   - Layout changes triggering re-renders
+   - State updates requiring UI refresh
+
+2. **Performance Requirements**: 
+   - High-frequency updates (60fps rendering)
+   - Real-time input processing
+   - Memory-sensitive operations
+
+3. **Shared Context**:
+   - Components sharing the same lifecycle
+   - Features requiring the same state
+   - Logic needing direct access to related data
+
+4. **Debugging Clarity**:
+   - Stack traces should be clear and direct
+   - State changes should be easily traceable
+   - Behavior should be debuggable in one place
+
+## Implementation Guidelines
+
+1. **Co-locate Related State**:
+   ```ts
+   class Terminal {
+     // Related state together
+     private buffer: string[][] = []
+     private cursor = { x: 0, y: 0 }
+     private viewport = { width: 0, height: 0 }
+   }
+   ```
+
+2. **Direct Method Access**:
+   ```ts
+   class Screen {
+     clear() {
+       this.buffer.fill(' ')
+       this.render() // Direct call, no events
+     }
+   }
+   ```
+
+3. **Encapsulated Logic**:
+   ```ts
+   class TextInput {
+     private value = ''
+     private cursor = 0
+     
+     handleKey(key: string) {
+       // All text input logic in one place
+       if (key === 'Backspace') {
+         this.value = this.value.slice(0, -1)
+         this.cursor--
+         this.render()
+       }
+     }
+   }
+   ```
+
+4. **Minimal Interfaces**:
+   ```ts
+   // ✅ GOOD: Focused interface
+   interface Renderable {
+     render(): void
+     layout(width: number, height: number): void
+   }
+   
+   // ❌ BAD: Over-abstracted
+   interface IRenderable {
+     getRenderer(): Renderer
+     getLayout(): Layout
+     getState(): State
+   }
+   ```
+
+
+## TypeScript-Focused Examples of Composition of Concerns
+
+→ Closely related responsibilities are grouped and composed together intentionally.
+
+**Use case:**
+In JS/TS applications—especially in performance-sensitive UIs, backend services, or client frameworks—it’s advantageous to co-locate behavior and state when indirection, file splitting, or abstraction layers introduce unnecessary complexity.
+
+---
+
+**TypeScript/JavaScript-Specific Patterns:**
+
+* **Custom Hooks (`useX`)**
+  Co-locate state and behavior in React via `useState`, `useEffect`, `useCallback`. Custom hooks abstract repeated UI logic (e.g., `useDebounce`, `useToggle`) as reusable, encapsulated units.
+
+* **Class with Private Fields**
+  Encapsulate state and behavior using `class` with `#private` fields and methods. Maintains tight logical grouping, enforces encapsulation without external separation.
+
+  ```ts
+  class Timer {
+    #start = 0
+    start() { this.#start = Date.now() }
+    stop() { return Date.now() - this.#start }
+  }
+  ```
+
+* **Closure-Based Module Pattern**
+  Use closures to bundle internal state and exposed methods in the same scope.
+
+  ```ts
+  const createCounter = () => {
+    let count = 0
+    return {
+      inc: () => ++count,
+      dec: () => --count
+    }
+  }
+  ```
+
+* **Tagged Union Types + Reducers**
+  Encodes behavior with data using discriminated unions and reducer functions.
+
+  ```ts
+  type Action = 
+    | { type: 'increment' } 
+    | { type: 'set'; value: number }
+
+  const reducer = (state: number, action: Action): number => {
+    switch (action.type) {
+      case 'increment': return state + 1
+      case 'set': return action.value
+    }
+  }
+  ```
+
+* **Zod Schema with `transform`/`refine`**
+  Encapsulate data and logic by validating and transforming simultaneously in one schema definition.
+
+  ```ts
+  const schema = z.string().refine(s => s.startsWith('z'), 'Must start with z')
+  ```
+
+* **Namespace Emulation with `const` Object**
+  Group concern logic in plain objects to create pseudo-modules with minimal ceremony.
+
+  ```ts
+  const Auth = {
+    login(user: string) { /* logic */ },
+    logout() { /* logic */ }
+  }
+  ```
+
+* **Object Literals with Methods**
+  Bundle behavior with state via plain objects, e.g., domain models.
+
+  ```ts
+  const cart = {
+    items: [] as string[],
+    add(item: string) { this.items.push(item) },
+    total() { return this.items.length }
+  }
+  ```
+
+* **Higher-Order Functions (HOFs)**
+  Functions that encapsulate concern and return enhanced behavior. Example: middleware, logging, or context-aware operations.
+
+  ```ts
+  const withLogging = <T extends (...args: any[]) => any>(fn: T): T =>
+    ((...args) => {
+      console.log(args)
+      return fn(...args)
+    }) as T
+  ```
+
+* **Inline Reactive State (Signals/Refs)**
+  In frameworks like SolidJS or Vue 3:
+
+  ```ts
+  const count = ref(0)
+  const doubled = computed(() => count.value * 2)
+  ```
+
+* **File Co-location with Barrel Exports**
+  Group tightly related logic (e.g., service + types + utils) into a single folder with a shared `index.ts` for controlled exposure. Keeps cohesion without scattering code.
+
+
+
+## Summary
+
+Composition of concerns is about intentional grouping of related responsibilities. In a TUI framework:
+
+- Keep related state and behavior together
+- Minimize unnecessary abstraction layers
+- Optimize for performance and debuggability
+- Group code by feature, not by technical role
+
+Remember: The goal is not to separate everything, but to compose the right things together for clarity, performance, and maintainability.

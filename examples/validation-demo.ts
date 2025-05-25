@@ -4,6 +4,7 @@
 import { TUIRuntime } from '../src/core/runtime.ts'
 import { Text } from '../src/widgets/text.tsx'
 import type { TerminalNode } from '../src/core/types.ts'
+import { diagnosticLogger } from '../src/utils/diagnostic-logger.ts'
 
 // Simple component demonstrating the framework
 const ValidationApp = (): TerminalNode => {
@@ -58,22 +59,22 @@ const ValidationApp = (): TerminalNode => {
 }
 
 async function runValidationDemo() {
-  console.log('🚀 Starting TUI Framework Validation Demo...')
-  console.log('📋 Validating claimed completed functionality...')
+  diagnosticLogger.info('ValidationDemo', '🚀 Starting TUI Framework Validation Demo...')
+  diagnosticLogger.info('ValidationDemo', '📋 Validating claimed completed functionality...')
   
   const runtime = new TUIRuntime()
   
   try {
-    console.log('⚙️  Initializing runtime...')
+    diagnosticLogger.info('ValidationDemo', '⚙️  Initializing runtime...')
     await runtime.initialize()
-    console.log('✅ Runtime initialized successfully!')
+    diagnosticLogger.info('ValidationDemo', '✅ Runtime initialized successfully!')
     
-    console.log('🎨 Starting UI render...')
+    diagnosticLogger.info('ValidationDemo', '🎨 Starting UI render...')
     
     // Set up auto-shutdown after 3 seconds
     const shutdownTimer = setTimeout(async () => {
-      console.log('\n🏁 Demo completed successfully!')
-      console.log('✅ All framework components working as expected')
+      diagnosticLogger.info('ValidationDemo', '\n🏁 Demo completed successfully!')
+      diagnosticLogger.info('ValidationDemo', '✅ All framework components working as expected')
       await runtime.shutdown()
       Deno.exit(0)
     }, 3000)
@@ -85,7 +86,7 @@ async function runValidationDemo() {
     clearTimeout(shutdownTimer)
     
   } catch (error) {
-    console.error('❌ Demo failed:', error)
+    diagnosticLogger.error('ValidationDemo', '❌ Demo failed:', error)
     await runtime.shutdown()
     Deno.exit(1)
   }

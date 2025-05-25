@@ -3,6 +3,7 @@
 import { keyboard, type KeyboardCapabilities, KeyEvent } from './keyboard.ts'
 import { mouse, type MouseCapabilities, MouseEvent } from './mouse.ts'
 import { diagnosticLogger } from '../utils/diagnostic-logger.ts'
+import { terminalCleanup } from '../utils/terminal-cleanup.ts'
 
 export interface InputEvent {
   type: 'keyboard' | 'mouse' | 'resize' | 'focus' | 'paste'
@@ -39,6 +40,13 @@ export class InputProtocolManager {
   private isActive = false
   private capabilities: InputCapabilities | null = null
   private resizeHandler: (() => void) | null = null
+
+  constructor() {
+    // Register cleanup handler
+    terminalCleanup.addCleanupHandler(async () => {
+      await this.shutdown()
+    })
+  }
 
   // Initialize all input protocols
   async initialize(): Promise<boolean> {

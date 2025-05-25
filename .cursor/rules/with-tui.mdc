@@ -5,10 +5,10 @@ alwaysApply: true
 ---
 # PROJECT INFORMATION
 
-This project is a ground-breaking and bleeding edge terminal emulator for Deno that leverages native integrations like notcurses and kitty. It can be extremely error prone, hard to get type errors and warnings under control, and brittle. Changes should only be made after careful consideration to intrernals and second-order effects. The original design a long time ago for this codebase can be found in the RFC named [RFC.md](mdc:RFC.md)
+This project is a ground-breaking and bleeding edge terminal emulator for Deno that leverages native integrations like notcurses and kitty. It can be extremely error prone, hard to get type errors and warnings under control, and brittle. Changes should only be made after careful consideration to internals and second-order effects. The original design a long time ago for this codebase can be found in the RFC named [RFC.md](mdc:RFC.md)
 
-- **DANGER**: Working on this codebase requires maintaining its corups of deeply technical reference documentation and material. If you come across or use documentatio that you find to be innacurate or out of date, and **you're 100% confident it's innaucrate**, then **ALWAYS update the document to reflect the most accurate state of the codebase** as many people working on the codebase. rely deeply on the accuracy of those documents.
-- **CRITICAL**: Working on this project requires a DEEP and THURORUGH understanding of Deno 2 internals such as writeable/readable streams, "@std/" libraries like "@std/cli" and "@std/io" and "@std/fs", as well as native FFI using notcurses. 
+- **DANGER**: Working on this codebase requires maintaining its corpus of deeply technical reference documentation and material. If you come across or use documentation that you find to be inaccurate or out of date, and **you're 100% confident it's inaccurate**, then **ALWAYS update the document to reflect the most accurate state of the codebase** as many people working on the codebase. rely deeply on the accuracy of those documents.
+- **CRITICAL**: Working on this project requires a DEEP and THOROUGH understanding of Deno 2 internals such as writeable/readable streams, "@std/" libraries like "@std/cli" and "@std/io" and "@std/fs", as well as native FFI using notcurses. 
 - **NOTE**: When you're troubleshooting always read or search for the documentation of the library or method you're using online or in this codebase.
 
 ## IMPORTANT INFORMATION FOR CURSOR AI AGENT
@@ -18,10 +18,13 @@ This project is a ground-breaking and bleeding edge terminal emulator for Deno t
 - notcurses FFI documented in [notcurses-ffi.ts](mdc:src/graphics/notcurses-ffi.ts)
 - Deno FFI documented in [deno-ffi.md](mdc:docs/deno-ffi.md) 
 - Deno 2: import map in `deno.json`
+- NO DEBUG LOGGING TO TERMINAL. Always import and use the `diagnostic-logger.ts` module if you need debug logs.
+- Logs written to `logs/`. Separate logs for error, stdout, and all (stdout + stderr)
 - Missing Import? Install it with `deno add jsr:@some/cli` for JSR and `deno add npm:` for NPM packages
 - TESTS: run them with `DENO_ENV= deno teat -A` test files in `test/`
 - RFC: [RFC.md](mdc:RFC.md) has the genesis story of the codebase
 - DECISION LOG: [DECISIONS.md](mdc:DECISIONS.md) early genesis decisions
-- Custom jsx in this project
-- **CRITICAL**: [with-javascript.mdc](mdc:.cursor/rules/with-javascript.mdc) and [with-typescript.mdc](mdc:.cursor/rules/with-typescript.mdc) rules and guides on proper coding
+- A Custom `JSX` namespace is used in this project located at `src/jsx/jsx-runtime.ts`
 - Use your tools. Install and configure packages yourself. Search the web when needed to look up the latest version or source code for a library when debugging it
+- Import errors should be debugged and fixed following the guidelines in [with-deno-stdlib.mdc](mdc:.cursor/rules/with-deno-stdlib.mdc)
+- **CRITICAL**: [with-javascript.mdc](mdc:.cursor/rules/with-javascript.mdc) and [with-typescript.mdc](mdc:.cursor/rules/with-typescript.mdc) rules and guides on proper coding

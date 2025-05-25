@@ -1,0 +1,17 @@
+---
+description: 
+globs: examples/**,scripts/run-example.ts,deno.json
+alwaysApply: false
+---
+## CAUTION: Some of These Files Involve Examples
+
+Example files like [validation-demo.ts](mdc:examples/validation-demo.ts) are quick and easy demonstrations of the power of the TUI framework in a realistic scenario and are located in `examples/` and can be executed through the deno task `deno task example [example name]`. Here are the rules and guidelines for using examples in the TUI codebase:
+
+- Example files are NOT tests. You're encouraged to continue to write focused tests in the test folder at `test/`. Examples Are preferred for realistic user or agent demonstrations for the TUI codebase
+- Sometimes examples are used to debug issues, as terminals are hard to test sometimes using only programmatic means.
+- Examples SHOULD be created for all the major features and kept up to date from breaking changes.
+- `deno task example [example name]` is a deno task that runs [run-example.ts](mdc:scripts/run-example.ts) 
+- deno tasks are defined in [deno.json](mdc:deno.json) and trigger task scripts in `scripts/`
+- [run-example.ts](mdc:scripts/run-example.ts) makes it easy to run quick examples that showcase various functionality of the TUI
+- example files are located in `examples/`. such as [hello-world-simple.ts](mdc:examples/hello-world-simple.ts) and [notcurses-demo.ts](mdc:examples/notcurses-demo.ts) 
+- [run-example.ts](mdc:scripts/run-example.ts) executes example files found in the `examples/` folder with a default 10s timeout timer to help the Cursor AI Agent test the examples without fear of the example locking up in the terminal due to a bug. The Cursor AI agent can be confident running an example through `deno task example [example name]` will always return eventually

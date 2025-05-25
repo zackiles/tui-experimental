@@ -7,6 +7,7 @@ import { visualRenderer } from '../src/graphics/visual-renderer.ts'
 import { colorSystem, AdvancedColorSystem } from '../src/graphics/color-system.ts'
 import { effectsSystem, EffectsSystem, GradientDirection } from '../src/graphics/effects-system.ts'
 import { notcurses } from '../src/graphics/notcurses-ffi.ts'
+import { diagnosticLogger } from '../src/utils/diagnostic-logger.ts'
 
 interface DemoState {
   currentDemo: number
@@ -22,13 +23,13 @@ class AdvancedGraphicsDemo {
   }
 
   async initialize(): Promise<boolean> {
-    console.log('🎨 Advanced Graphics Demo - Initializing...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '🎨 Advanced Graphics Demo - Initializing...')
 
     try {
       // Initialize notcurses
       const success = await notcurses.init()
       if (!success) {
-        console.warn('⚠️  Notcurses not available, running in fallback mode')
+        diagnosticLogger.warn('AdvancedGraphicsDemo', '⚠️  Notcurses not available, running in fallback mode')
       }
 
       // Detect terminal capabilities
@@ -38,33 +39,33 @@ class AdvancedGraphicsDemo {
       this.state.isRunning = true
       return true
     } catch (error) {
-      console.error('❌ Failed to initialize graphics demo:', error)
+      diagnosticLogger.error('AdvancedGraphicsDemo', '❌ Failed to initialize graphics demo:', error)
       return false
     }
   }
 
   private logCapabilities(): void {
     const caps = this.state.capabilities
-    console.log('\n📊 Terminal Graphics Capabilities:')
-    console.log(`  • Terminal: ${caps.terminalType}`)
-    console.log(`  • Color Depth: ${caps.colorDepth}-bit`)
-    console.log(`  • Max Colors: ${caps.maxColors.toLocaleString()}`)
-    console.log(`  • Unicode Support: ${caps.supportsUnicode ? '✅' : '❌'}`)
-    console.log(`  • Pixel Graphics: ${caps.supportsPixelGraphics ? '✅' : '❌'}`)
-    console.log(`  • Kitty Protocol: ${caps.supportsKittyGraphics ? '✅' : '❌'}`)
-    console.log(`  • Sixel Support: ${caps.supportsSixel ? '✅' : '❌'}`)
-    console.log(`  • Sextants: ${caps.supportsSextants ? '✅' : '❌'}`)
-    console.log(`  • Quadrants: ${caps.supportsQuadrants ? '✅' : '❌'}`)
-    console.log(`  • Braille: ${caps.supportsBraille ? '✅' : '❌'}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', '\n📊 Terminal Graphics Capabilities:')
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Terminal: ${caps.terminalType}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Color Depth: ${caps.colorDepth}-bit`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Max Colors: ${caps.maxColors.toLocaleString()}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Unicode Support: ${caps.supportsUnicode ? '✅' : '❌'}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Pixel Graphics: ${caps.supportsPixelGraphics ? '✅' : '❌'}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Kitty Protocol: ${caps.supportsKittyGraphics ? '✅' : '❌'}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Sixel Support: ${caps.supportsSixel ? '✅' : '❌'}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Sextants: ${caps.supportsSextants ? '✅' : '❌'}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Quadrants: ${caps.supportsQuadrants ? '✅' : '❌'}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Braille: ${caps.supportsBraille ? '✅' : '❌'}`)
   }
 
   async runDemo(): Promise<void> {
     if (!this.state.isRunning) {
-      console.log('❌ Demo not initialized')
+      diagnosticLogger.error('AdvancedGraphicsDemo', '❌ Demo not initialized')
       return
     }
 
-    console.log('\n🚀 Starting Advanced Graphics Demonstrations\n')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '\n🚀 Starting Advanced Graphics Demonstrations\n')
 
     const demos = [
       { name: 'Multi-Plane Rendering', fn: () => this.demoMultiPlaneRendering() },
@@ -78,29 +79,29 @@ class AdvancedGraphicsDemo {
 
     for (let i = 0; i < demos.length; i++) {
       const demo = demos[i]
-      console.log(`\n🎯 Demo ${i + 1}/${demos.length}: ${demo.name}`)
-      console.log('─'.repeat(50))
+      diagnosticLogger.info('AdvancedGraphicsDemo', `\n🎯 Demo ${i + 1}/${demos.length}: ${demo.name}`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', '─'.repeat(50))
 
       try {
         await demo.fn()
-        console.log(`✅ ${demo.name} completed successfully`)
+        diagnosticLogger.info('AdvancedGraphicsDemo', `✅ ${demo.name} completed successfully`)
       } catch (error) {
-        console.error(`❌ ${demo.name} failed:`, error)
+        diagnosticLogger.error('AdvancedGraphicsDemo', `❌ ${demo.name} failed:`, error)
       }
 
       // Pause between demos
       if (i < demos.length - 1) {
-        console.log('\n⏳ Pausing for 2 seconds...')
+        diagnosticLogger.info('AdvancedGraphicsDemo', '\n⏳ Pausing for 2 seconds...')
         await this.delay(2000)
       }
     }
 
-    console.log('\n🎉 All demonstrations completed!')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '\n🎉 All demonstrations completed!')
   }
 
   // Demo 1: Multi-Plane Rendering with Z-ordering
   private async demoMultiPlaneRendering(): Promise<void> {
-    console.log('Creating multiple planes with different z-indices...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', 'Creating multiple planes with different z-indices...')
 
     // Create background plane
     const backgroundPlane = planeManager.createPlane('background', {
@@ -130,13 +131,13 @@ class AdvancedGraphicsDemo {
       // Render all planes
       planeManager.renderAll()
 
-      console.log(`  • Created ${planeManager.getPlaneCount()} planes`)
-      console.log('  • Demonstrating z-order rendering')
+      diagnosticLogger.info('AdvancedGraphicsDemo', `  • Created ${planeManager.getPlaneCount()} planes`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', '  • Demonstrating z-order rendering')
       
       await this.delay(1000)
 
       // Demonstrate z-index changes
-      console.log('  • Changing z-order...')
+      diagnosticLogger.info('AdvancedGraphicsDemo', '  • Changing z-order...')
       planeManager.setPlaneZIndex('background', 3)
       planeManager.renderAll()
 
@@ -151,7 +152,7 @@ class AdvancedGraphicsDemo {
 
   // Demo 2: Blitter Selection Based on Content
   private async demoBlitterSelection(): Promise<void> {
-    console.log('Demonstrating intelligent blitter selection...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', 'Demonstrating intelligent blitter selection...')
 
     const contentTypes: GraphicsContent[] = [
       {
@@ -176,43 +177,43 @@ class AdvancedGraphicsDemo {
       const info = blitterEngine.getBlitterInfo(blitter)
       const supported = await blitterEngine.isBlitterSupported(blitter)
 
-      console.log(`  • ${content.type.toUpperCase()} content:`)
-      console.log(`    - Selected blitter: ${blitter}`)
-      console.log(`    - Pixel ratio: ${info.pixelRatio[0]}x${info.pixelRatio[1]}`)
-      console.log(`    - Color support: ${info.colorSupport}`)
-      console.log(`    - Compatibility: ${info.compatibility}`)
-      console.log(`    - Supported: ${supported ? '✅' : '❌'}`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', `  • ${content.type.toUpperCase()} content:`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', `    - Selected blitter: ${blitter}`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', `    - Pixel ratio: ${info.pixelRatio[0]}x${info.pixelRatio[1]}`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', `    - Color support: ${info.colorSupport}`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', `    - Compatibility: ${info.compatibility}`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', `    - Supported: ${supported ? '✅' : '❌'}`)
     }
 
     // Show all supported blitters
     const supportedBlitters = await blitterEngine.getSupportedBlitters()
-    console.log(`  • Supported blitters: ${supportedBlitters.join(', ')}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Supported blitters: ${supportedBlitters.join(', ')}`)
   }
 
   // Demo 3: Advanced Color Systems
   private async demoColorSystems(): Promise<void> {
-    console.log('Demonstrating advanced color manipulation...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', 'Demonstrating advanced color manipulation...')
 
     // Create color channels
     const red = colorSystem.createChannel(255, 0, 0)
     const blue = colorSystem.createChannel(0, 0, 255)
     const fromHex = colorSystem.createChannelFromHex('#00FF00')
 
-    console.log('  • Color creation:')
-    console.log(`    - Red: ${colorSystem.toCSSColor(red)}`)
-    console.log(`    - Blue: ${colorSystem.toCSSColor(blue)}`)
-    console.log(`    - Green (from hex): ${colorSystem.toCSSColor(fromHex)}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Color creation:')
+    diagnosticLogger.info('AdvancedGraphicsDemo', `    - Red: ${colorSystem.toCSSColor(red)}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `    - Blue: ${colorSystem.toCSSColor(blue)}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `    - Green (from hex): ${colorSystem.toCSSColor(fromHex)}`)
 
     // Create gradient
     const gradient = colorSystem.createGradient(red, blue, 5)
-    console.log('  • Gradient colors:')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Gradient colors:')
     gradient.forEach((color, i) => {
-      console.log(`    ${i + 1}. ${colorSystem.toHexColor(color)}`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', `    ${i + 1}. ${colorSystem.toHexColor(color)}`)
     })
 
     // Blend colors
     const blended = colorSystem.blendColors(red, blue)
-    console.log(`  • Blended color: ${colorSystem.toCSSColor(blended)}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Blended color: ${colorSystem.toCSSColor(blended)}`)
 
     // Accessibility check
     const white = AdvancedColorSystem.PALETTE.WHITE
@@ -220,21 +221,21 @@ class AdvancedGraphicsDemo {
     const contrastRatio = colorSystem.getContrastRatio(white, black)
     const wcagAA = colorSystem.meetsWCAGContrast(white, black, 'AA')
 
-    console.log('  • Accessibility:')
-    console.log(`    - White/Black contrast ratio: ${contrastRatio.toFixed(2)}`)
-    console.log(`    - WCAG AA compliant: ${wcagAA ? '✅' : '❌'}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Accessibility:')
+    diagnosticLogger.info('AdvancedGraphicsDemo', `    - White/Black contrast ratio: ${contrastRatio.toFixed(2)}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `    - WCAG AA compliant: ${wcagAA ? '✅' : '❌'}`)
 
     // Show palette colors
-    console.log('  • Available palette colors:')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Available palette colors:')
     const paletteEntries = Object.entries(AdvancedColorSystem.PALETTE).slice(0, 5)
     paletteEntries.forEach(([name, color]) => {
-      console.log(`    - ${name}: ${colorSystem.toHexColor(color)}`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', `    - ${name}: ${colorSystem.toHexColor(color)}`)
     })
   }
 
   // Demo 4: Advanced Effects
   private async demoAdvancedEffects(): Promise<void> {
-    console.log('Demonstrating visual effects...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', 'Demonstrating visual effects...')
 
     const effectPlane = planeManager.createPlane('effects', {
       x: 5, y: 5, rows: 8, cols: 30,
@@ -245,16 +246,16 @@ class AdvancedGraphicsDemo {
 
     this.fillPlaneWithPattern(effectPlane, '█', 'Effects Demo')
 
-    console.log('  • Fade in effect...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Fade in effect...')
     await effectsSystem.fadeIn(effectPlane, 1000)
 
-    console.log('  • Slide animation...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Slide animation...')
     await effectsSystem.slide(effectPlane, 5, 5, 15, 8, { duration: 1000 })
 
-    console.log('  • Shake effect...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Shake effect...')
     await effectsSystem.shake(effectPlane, { duration: 500, intensity: 3 })
 
-    console.log('  • Typewriter effect...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Typewriter effect...')
     const textPlane = planeManager.createPlane('typewriter', {
       x: 5, y: 15, rows: 2, cols: 40,
       zIndex: 2
@@ -270,7 +271,7 @@ class AdvancedGraphicsDemo {
       planeManager.destroyPlane('typewriter')
     }
 
-    console.log('  • Fade out effect...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Fade out effect...')
     await effectsSystem.fadeOut(effectPlane, 1000)
 
     planeManager.destroyPlane('effects')
@@ -278,7 +279,7 @@ class AdvancedGraphicsDemo {
 
   // Demo 5: Gradient Rendering
   private async demoGradients(): Promise<void> {
-    console.log('Demonstrating gradient rendering...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', 'Demonstrating gradient rendering...')
 
     const gradientPlane = planeManager.createPlane('gradients', {
       x: 2, y: 2, rows: 12, cols: 50,
@@ -302,7 +303,7 @@ class AdvancedGraphicsDemo {
     ]
 
     for (const direction of directions) {
-      console.log(`  • ${direction} gradient`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', `  • ${direction} gradient`)
       effectsSystem.createLinearGradient(gradientPlane, direction, colors)
       planeManager.renderAll()
       await this.delay(1500)
@@ -313,41 +314,41 @@ class AdvancedGraphicsDemo {
 
   // Demo 6: Image Processing (simulated)
   private async demoImageProcessing(): Promise<void> {
-    console.log('Demonstrating image processing capabilities...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', 'Demonstrating image processing capabilities...')
 
     // Create a simulated image
     const imageData = new Uint8Array(64 * 64 * 4) // 64x64 RGBA
     this.generateTestImage(imageData, 64, 64)
 
-    console.log('  • Created test image (64x64 RGBA)')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Created test image (64x64 RGBA)')
 
     const visual = visualRenderer.createCustomGraphics(imageData, 64, 64, 'rgba')
-    console.log(`  • Visual created: ${visual.width}x${visual.height}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `  • Visual created: ${visual.width}x${visual.height}`)
 
     // Demonstrate transformations
-    console.log('  • Applying transformations...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Applying transformations...')
     
     const scaled = await visualRenderer.transformVisual(visual, {
       scale: { width: 32, height: 32 }
     })
-    console.log(`    - Scaled to: ${scaled.width}x${scaled.height}`)
+    diagnosticLogger.info('AdvancedGraphicsDemo', `    - Scaled to: ${scaled.width}x${scaled.height}`)
 
     const rotated = await visualRenderer.transformVisual(scaled, {
       rotation: 90
     })
-    console.log('    - Rotated 90 degrees')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '    - Rotated 90 degrees')
 
     const flipped = await visualRenderer.transformVisual(rotated, {
       flip: 'horizontal'
     })
-    console.log('    - Flipped horizontally')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '    - Flipped horizontally')
 
-    console.log('  • Image processing pipeline completed')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Image processing pipeline completed')
   }
 
   // Demo 7: Animation System
   private async demoAnimations(): Promise<void> {
-    console.log('Demonstrating animation system...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', 'Demonstrating animation system...')
 
     const animPlane = planeManager.createPlane('animation', {
       x: 10, y: 10, rows: 6, cols: 20,
@@ -358,17 +359,17 @@ class AdvancedGraphicsDemo {
 
     this.fillPlaneWithPattern(animPlane, '▓', 'Animated')
 
-    console.log('  • Scale animation...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Scale animation...')
     await effectsSystem.scale(animPlane, 1.0, 1.5, { duration: 1000 })
     await effectsSystem.scale(animPlane, 1.5, 1.0, { duration: 1000 })
 
-    console.log('  • Blink animation...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Blink animation...')
     await effectsSystem.blink(animPlane, { count: 3, onDuration: 300, offDuration: 300 })
 
-    console.log('  • Available easing functions:')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '  • Available easing functions:')
     const easingNames = Object.keys(EffectsSystem.EASING)
     easingNames.forEach(name => {
-      console.log(`    - ${name}`)
+      diagnosticLogger.info('AdvancedGraphicsDemo', `    - ${name}`)
     })
 
     planeManager.destroyPlane('animation')
@@ -378,7 +379,7 @@ class AdvancedGraphicsDemo {
   private fillPlaneWithPattern(plane: any, char: string, text: string): void {
     // Simulate filling a plane with a pattern
     // In a real implementation, this would use notcurses plane manipulation
-    console.log(`    Filled plane '${plane.id}' with pattern '${char}' and text '${text}'`)
+    diagnosticLogger.debug('AdvancedGraphicsDemo', `    Filled plane '${plane.id}' with pattern '${char}' and text '${text}'`)
   }
 
   private generateTestImage(data: Uint8Array, width: number, height: number): void {
@@ -401,7 +402,7 @@ class AdvancedGraphicsDemo {
   }
 
   async cleanup(): Promise<void> {
-    console.log('\n🧹 Cleaning up...')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '\n🧹 Cleaning up...')
     
     // Stop all animations
     effectsSystem.stopAllAnimations()
@@ -413,7 +414,7 @@ class AdvancedGraphicsDemo {
     notcurses.stop()
     
     this.state.isRunning = false
-    console.log('✅ Cleanup completed')
+    diagnosticLogger.info('AdvancedGraphicsDemo', '✅ Cleanup completed')
   }
 }
 
@@ -425,7 +426,7 @@ async function main(): Promise<void> {
     // Initialize the demo
     const success = await demo.initialize()
     if (!success) {
-      console.log('❌ Failed to initialize graphics demo')
+      diagnosticLogger.error('AdvancedGraphicsDemo', '❌ Failed to initialize graphics demo')
       return
     }
 
@@ -433,7 +434,7 @@ async function main(): Promise<void> {
     await demo.runDemo()
 
   } catch (error) {
-    console.error('❌ Demo failed:', error)
+    diagnosticLogger.error('AdvancedGraphicsDemo', '❌ Demo failed:', error)
   } finally {
     // Always cleanup
     await demo.cleanup()
@@ -442,6 +443,6 @@ async function main(): Promise<void> {
 
 // Run the demo if this is the main module
 if (import.meta.main) {
-  console.log('🎨 Advanced Graphics Demo Starting...')
-  main().catch(console.error)
+  diagnosticLogger.info('AdvancedGraphicsDemo', '🎨 Advanced Graphics Demo Starting...')
+  main().catch(error => diagnosticLogger.error('AdvancedGraphicsDemo', error))
 } 

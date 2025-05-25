@@ -1,10 +1,10 @@
 ---
-description:
-globs: *.md,*.ts
+description: 
+globs: *.md,*.ts,*.tsx,*.js,*.jsx
 alwaysApply: false
 ---
 ## How You Write Clean Code
-The following is a style guide of important styles and patterns you MUST enforce when writing code in `<project-root>new-codebase/`.
+The following is a style guide of important styles and patterns you MUST enforce when writing code or documentation in this project.
 
 ## Code Style Guidelines
 
@@ -341,5 +341,6 @@ export async function deploy() {
 This style guide promotes a clean, expression-oriented approach to Deno 2 + TypeScript that emphasizes clarity through compactness, reducing visual and cognitive noise. The goal is to write code that reads linearly, minimizes ceremony, and expresses logic as value transformations rather than imperative steps. By organizing setup and configuration at the top of functions and keeping orchestration flat and focused, it balances brevity with maintainability—favoring readable, minimal, and purposefully structured code over abstract or verbose patterns.
 
 ## IMPORTANT
-- Avoid inline comments in code that is easily understood or refers to this style guide. Always leanup dead code, bad comments, or code that doesn't adhere to this style guide
+- Avoid inline comments in code that is easily understood or refers to this style guide.
+- ALWAYS clean-up or refactor dead or old unused code or comments, redundant or obvious inline comments, inaccurate code comments, or code that doesn't adhere to this style guide
 - If you see code comments that don't adhere to these rules FIX or REMOVE them!

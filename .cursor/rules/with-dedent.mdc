@@ -1,0 +1,119 @@
+---
+description: 
+globs: *.ts,*.tsx
+alwaysApply: false
+---
+# Formatting Multi Line Strings
+
+You MUST prefer to import and use the `dedent` method from the library `@qnighy/dedent`: when formatting multi-line strings where indention is to be preserved.
+
+**Purpose of `@qnighy/dedent`:**
+
+To cleanly write multiline template literals by removing common leading whitespace, preserving relative indentation.
+
+---
+
+### ✅ When to Use
+
+* When writing **multiline strings** for CLI help, logs, or error messages.
+* When aligning string content with code indentation without leaking it to output.
+* When avoiding `.trim()` chains or manual whitespace slicing.
+
+---
+
+### 🛠️ How to Use
+
+```ts
+import { dedent } from "@qnighy/dedent"
+
+console.log(dedent`
+  Usage: vault [command] [options]
+
+  Commands:
+    seal         Encrypt and lock the vault
+    unseal       Decrypt and unlock the vault
+    status       Show vault lock state
+
+  Options:
+    -h, --help     Show help
+    -v, --version  Show version
+`)
+```
+
+Prints:
+
+```
+Usage: vault [command] [options]
+
+Commands:
+  seal         Encrypt and lock the vault
+  unseal       Decrypt and unlock the vault
+  status       Show vault lock state
+
+Options:
+  -h, --help     Show help
+  -v, --version  Show version
+```
+
+**Install:**
+
+```bash
+npm install @qnighy/dedent
+```
+
+---
+
+### ❓ Why Use This vs Alternatives
+
+| Feature                        | `@qnighy/dedent` | Manual `.trim()` |
+| ------------------------------ | ---------------- | ---------------- |
+| Preserves relative indentation | ✅                | ❌                |
+| Maintains empty lines          | ✅                | ❌                |
+| Unicode & tab support          | ✅                | ❌                |
+| Typescript support             | ✅                | —                |
+
+---
+
+### ⚠️ Gotchas
+
+* Removes only **common leading whitespace** from all non-blank lines.
+* Keeps relative indentation and line breaks intact.
+* Not a substitute for formatting logic—best used for static strings.
+
+---
+
+### 🔁 Example Use Cases
+
+**CLI Help:**
+
+```ts
+console.log(dedent`
+  GitVault - Secure Secrets in Git
+
+  Commands:
+    init       Initialize a new encrypted vault
+    add        Add a file or folder to the vault
+    unlock     Decrypt files for local use
+
+  Run 'gitvault <command> --help' for more info.
+`)
+```
+
+**Multiline Error:**
+
+```ts
+console.log(dedent`
+  Error: Configuration file missing
+
+  Expected file at:
+    ./config/vault.config.json
+
+  Please run 'vault init' to create a default config.
+`)
+```
+
+---
+
+### Summary
+
+Dedenting aligns **source readability** with **clean runtime output**, keeping multiline strings precise, legible, and structured—perfect for logs, help text, or diagnostics.

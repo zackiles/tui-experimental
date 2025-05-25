@@ -8,26 +8,27 @@
  */
 
 import { notcurses } from '../src/graphics/notcurses-ffi.ts'
+import { diagnosticLogger } from '../src/utils/diagnostic-logger.ts'
 
 async function runDemo() {
-  console.log('🎨 Notcurses FFI Demo')
-  console.log('Press Ctrl+C to exit')
+  diagnosticLogger.info('NotcursesDemo', '🎨 Notcurses FFI Demo')
+  diagnosticLogger.info('NotcursesDemo', 'Press Ctrl+C to exit')
   
   // Initialize notcurses
   if (!notcurses.isAvailable()) {
-    console.log('❌ Notcurses FFI not available')
+    diagnosticLogger.error('NotcursesDemo', '❌ Notcurses FFI not available')
     return
   }
   
   const success = await notcurses.init({})
   if (!success) {
-    console.log('❌ Failed to initialize notcurses')
+    diagnosticLogger.error('NotcursesDemo', '❌ Failed to initialize notcurses')
     return
   }
   
   const stdPlane = notcurses.getStandardPlane()
   if (!stdPlane) {
-    console.log('❌ Failed to get standard plane')
+    diagnosticLogger.error('NotcursesDemo', '❌ Failed to get standard plane')
     notcurses.stop()
     return
   }
@@ -60,7 +61,7 @@ async function runDemo() {
     await new Promise(() => {}) // Wait forever
     
   } catch (error) {
-    console.error('Demo error:', error)
+    diagnosticLogger.error('NotcursesDemo', 'Demo error:', error)
   } finally {
     notcurses.stop()
   }
@@ -68,7 +69,7 @@ async function runDemo() {
 
 // Handle graceful shutdown
 Deno.addSignalListener('SIGINT', () => {
-  console.log('\n👋 Shutting down...')
+  diagnosticLogger.info('NotcursesDemo', '\n👋 Shutting down...')
   notcurses.stop()
   Deno.exit(0)
 })

@@ -7,6 +7,8 @@ import { inputManager } from '../src/input/protocols.ts'
 import { notcurses } from '../src/graphics/notcurses-ffi.ts'
 import { sixelRenderer } from '../src/graphics/sixel.ts'
 import { kittyRenderer } from '../src/graphics/kitty-graphics.ts'
+import { diagnosticLogger } from '../src/utils/diagnostic-logger.ts'
+import { terminalCleanup } from '../src/utils/terminal-cleanup.ts'
 
 // Application state
 interface Model {
@@ -323,7 +325,9 @@ function subscriptions(model: Model) {
           } else if (key.toLowerCase() === 'g') {
             dispatch({ type: 'TestGraphics' })
           } else if (key.toLowerCase() === 'q') {
-            inputManager.shutdown()
+            // Proper cleanup before exit
+            await inputManager.shutdown()
+            await terminalCleanup.cleanup()
             Deno.exit(0)
           }
           
@@ -371,29 +375,37 @@ function subscriptions(model: Model) {
 
 // Main application
 async function main() {
-  console.log('🚀 Starting TUI Framework Phase 2 Demo...')
+  diagnosticLogger.info('Phase2Demo', '🚀 Starting TUI Framework Phase 2 Demo...')
   
-  // Create and run the TEA program
-  const program = createProgram(init, update, view, subscriptions)
+  // Record original terminal state
+  terminalCleanup.recordOriginalState()
   
-  const runtime = runProgram(program, (element) => {
-    // This would normally render to the terminal
-    // For now, just show that rendering is happening
-    console.clear()
-    console.log('📺 Rendering UI... (Element received)')
+  try {
+    // Create and run the TEA program
+    const program = createProgram(init, update, view, subscriptions)
     
-    // In a complete implementation, this would:
-    // 1. Convert JSX to terminal operations
-    // 2. Apply constraint-based layout
-    // 3. Render to terminal buffer
-    // 4. Update screen efficiently
-  })
+    const runtime = runProgram(program, (element) => {
+      // This would normally render to the terminal
+      // For now, just show that rendering is happening
+      diagnosticLogger.debug('Phase2Demo', '📺 Rendering UI... (Element received)')
+      
+      // In a complete implementation, this would:
+      // 1. Convert JSX to terminal operations
+      // 2. Apply constraint-based layout
+      // 3. Render to terminal buffer
+      // 4. Update screen efficiently
+    })
 
-  console.log('✅ Demo running! Check terminal for updates.')
-  console.log('Press Ctrl+C to exit')
+    diagnosticLogger.info('Phase2Demo', '✅ Demo running! Check terminal for updates.')
+    diagnosticLogger.info('Phase2Demo', 'Press Ctrl+C to exit')
 
-  // Keep the program running
-  await new Promise(() => {}) // Run forever
+    // Keep the program running
+    await new Promise(() => {}) // Run forever
+  } catch (error) {
+    diagnosticLogger.error('Phase2Demo', 'Error in demo', error)
+    await terminalCleanup.cleanup()
+    throw error
+  }
 }
 
 // Run the demo

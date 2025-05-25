@@ -11,6 +11,7 @@ import { ANSI_CODES, DEFAULT_TERMINAL_HEIGHT, DEFAULT_TERMINAL_WIDTH } from './c
 import { diagnosticLogger } from '../utils/diagnostic-logger.ts'
 import { notcurses } from '../graphics/notcurses-ffi.ts'
 import { planeManager } from '../graphics/plane-manager.ts'
+import { terminalCleanup } from '../utils/terminal-cleanup.ts'
 
 export class TUIRuntime {
   private context: RenderContext | null = null
@@ -22,6 +23,12 @@ export class TUIRuntime {
 
   constructor() {
     this.setupSignalHandlers()
+
+    // Register runtime cleanup with the terminal cleanup system
+    terminalCleanup.addCleanupHandler(async () => {
+      await this.shutdown()
+    })
+
     diagnosticLogger.info('TUIRuntime', 'Runtime instance created')
   }
 
@@ -83,10 +90,12 @@ export class TUIRuntime {
   }
 
   async shutdown(): Promise<void> {
+    if (!this.running && !this.context) return // Already shut down
+
     diagnosticLogger.info('TUIRuntime', 'Starting shutdown')
     this.running = false
 
-    // Clean up graphics system
+    // Clean up graphics system first
     if (this.usingNotcurses) {
       try {
         diagnosticLogger.info('Graphics', 'Cleaning up notcurses')
@@ -118,6 +127,7 @@ export class TUIRuntime {
       }
     }
 
+    // Exit TUI mode and restore terminal
     await this.exitTUIMode()
     this.context = null
 
@@ -554,15 +564,8 @@ export class TUIRuntime {
 
   private async waitForTermination(): Promise<void> {
     return new Promise<void>((resolve) => {
-      // TEMPORARILY DISABLE INPUT HANDLER FOR DEBUGGING
-      // this.startInputHandler(resolve)
-
-      // Auto-exit after 3 seconds for testing
-      setTimeout(() => {
-        diagnosticLogger.info('TUIRuntime', 'Auto-exiting for debug...')
-        this.running = false
-        resolve()
-      }, 3000)
+      // Start input handler for user interaction
+      this.startInputHandler(resolve)
 
       // Also poll for running state changes
       const pollForExit = () => {
@@ -591,12 +594,18 @@ export class TUIRuntime {
 
           try {
             // Try to read with a timeout to avoid indefinite blocking
-            const { value, done } = await Promise.race([
+            const result = await Promise.race([
               reader.read(),
-              new Promise<{ value: undefined; done: boolean }>((_, reject) =>
-                setTimeout(() => reject(new Error('timeout')), 50)
-              ),
-            ])
+              new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 50)),
+            ]).catch((error) => {
+              if (error instanceof Error && error.message === 'timeout') {
+                return { value: undefined, done: false }
+              }
+              throw error
+            })
+
+            if (!result) continue
+            const { value, done } = result
 
             if (done) break
             if (!value) continue
@@ -620,19 +629,17 @@ export class TUIRuntime {
               }
             }
           } catch (error) {
-            // Timeout or other error - continue the loop
-            if (error instanceof Error && error.message === 'timeout') {
-              continue
+            // Handle any other errors that might occur
+            if (this.running) {
+              diagnosticLogger.error('Input', 'Error processing input', error)
             }
-            throw error
           }
         }
 
         reader.releaseLock()
       } catch (error) {
         if (this.running) {
-          diagnosticLogger.error('Input', 'Input error', error)
-          diagnosticLogger.error('TUIRuntime', 'Input error', error)
+          diagnosticLogger.error('Input', 'Input handler error', error)
         }
       }
     }
